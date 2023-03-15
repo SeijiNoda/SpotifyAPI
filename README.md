@@ -1,4 +1,4 @@
-# Spotify APi Playlist Maker
+# Spotify API Playlist Maker
 > ### Script made in Python that, when ran, gets user's most proper current songs and creates/updates a playlist with such songs
 
 #### This script was uses the [Spotify Web API](https://developer.spotify.com/) and is written in [Python 3](https://www.python.org/).

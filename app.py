@@ -10,6 +10,8 @@ import time
 import secrets
 import string
 
+from classes import Track
+
 app = Flask(__name__)
 
 random_str = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase) for i in range(7))
@@ -40,7 +42,27 @@ def get_tracks():
         return redirect(url_for('login', _external=False))
     
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
-    return sp.current_user_saved_tracks(limit=50, offset=0)
+
+    # get current user's top tracks
+    results = sp.current_user_top_tracks(limit = 20, time_range='short_term')
+    #return results
+    ret_str = ''
+    tracks = []
+    for idx, track in enumerate(results['items']):
+        #track = item['track']
+        ret_str += str(idx) + ' ' + track['artists'][0]['name'] + ' - ' + track['name'] + '<br>'
+        new_track = Track(track['name'], track['id'], track['artists'][0]['name'])
+        tracks.append(new_track)
+
+    results = sp.current_user_saved_tracks(limit=20) 
+    for idx, item in enumerate(results['items']):
+        track = item['track']
+        ret_str += str(idx) + ' ' + track['artists'][0]['name'] + ' - ' + track['name'] + '<br>'
+        new_track = Track(track['name'], track['id'], track['artists'][0]['name'])
+        tracks.append(new_track)
+
+    return ret_str
+    return sp.current_user_saved_tracks(limit=10)
 
 def get_token():
     token_valid = False
@@ -68,5 +90,5 @@ def create_spotify_oauth():
         client_id=client_id,
         client_secret=client_secret,
         redirect_uri=url_for('redirect_page', _external=True),
-        scope='user-library-read'
+        scope='user-library-read user-top-read'
     )
