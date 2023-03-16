@@ -31,10 +31,22 @@ def redirect_page():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session['token_info'] = token_info
-    return redirect(url_for('get_tracks', _external=True))
+    return redirect(url_for('create_playlist', _external=True))
 
-@app.route('/getTracks')
+@app.route('/createPlaylist')
+def create_playlist():
+    tracks = get_tracks()
+
+    return 'creating your playlist...<br><br>' + tracks[0].track_name
+
 def get_tracks():
+    top_tracks = get_top_tracks()
+    saved_tracks = get_saved_tracks()
+
+    return top_tracks + saved_tracks
+    #return sp.current_user_saved_tracks(limit=10)
+
+def get_top_tracks():
     session['token_info'], authorized = get_token()
     session.modified = True
     if not authorized:
@@ -45,24 +57,31 @@ def get_tracks():
 
     # get current user's top tracks
     results = sp.current_user_top_tracks(limit = 20, time_range='short_term')
-    #return results
-    ret_str = ''
-    tracks = []
-    for idx, track in enumerate(results['items']):
-        #track = item['track']
-        ret_str += str(idx) + ' ' + track['artists'][0]['name'] + ' - ' + track['name'] + '<br>'
+    top_tracks = []
+    for _, track in enumerate(results['items']):
         new_track = Track(track['name'], track['id'], track['artists'][0]['name'])
-        tracks.append(new_track)
+        top_tracks.append(new_track)
 
-    results = sp.current_user_saved_tracks(limit=20) 
-    for idx, item in enumerate(results['items']):
+    return top_tracks
+
+def get_saved_tracks():
+    session['token_info'], authorized = get_token()
+    session.modified = True
+    if not authorized:
+        print('user not logged in')
+        return redirect(url_for('login', _external=False))
+    
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+    
+    results = sp.current_user_saved_tracks(limit=20)
+    saved_tracks = []
+    for _, item in enumerate(results['items']):
         track = item['track']
-        ret_str += str(idx) + ' ' + track['artists'][0]['name'] + ' - ' + track['name'] + '<br>'
         new_track = Track(track['name'], track['id'], track['artists'][0]['name'])
-        tracks.append(new_track)
+        saved_tracks.append(new_track)
 
-    return ret_str
-    return sp.current_user_saved_tracks(limit=10)
+    return saved_tracks
+
 
 def get_token():
     token_valid = False
