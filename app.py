@@ -43,6 +43,20 @@ def create_playlist():
     
     sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
 
+    #
+    # get current user's profile (need user ID for creating playlist and display name) (*)
+    # get current user's playlists 
+    # check if current user has a playlist called "[user's display name from (*)]'s AutoPlaylist"
+    #   if he doesn't have, create a new playlist [POST] (using user's ID from (*)) and get it's ID from the response from the POST request
+    #
+    #   if he has, get it's ID from the response in ['items'][i]['id']
+    #       remove all songs [DELETE] from the previous playlist
+    #
+    # get tracks to be added to the new playlist
+    # create a string concatenating all songs from the seleceted tracks by their URI's and separeted by a comma ','
+    # with the playlist's ID and the URI's string, add all the songs to the playlist [POST]
+    #
+
     tracks = get_tracks()
 
     return 'creating your playlist...<br><br>' + tracks[0].track_name
@@ -102,7 +116,7 @@ def get_top_tracks(limit, offset=0):
     results = sp.current_user_top_tracks(limit = limit, time_range='short_term', offset=offset)
     top_tracks = []
     for _, track in enumerate(results['items']):
-        new_track = Track(track['name'], track['id'], track['artists'][0]['name'])
+        new_track = Track(track['name'], track['uri'], track['artists'][0]['name'])
         top_tracks.append(new_track)
 
     return top_tracks
@@ -120,7 +134,7 @@ def get_saved_tracks():
     saved_tracks = []
     for _, item in enumerate(results['items']):
         track = item['track']
-        new_track = Track(track['name'], track['id'], track['artists'][0]['name'])
+        new_track = Track(track['name'], track['uri'], track['artists'][0]['name'])
         saved_tracks.append(new_track)
 
     return saved_tracks

@@ -1,7 +1,7 @@
 class Track:
-    def __init__(self, track_name, track_id, artist_name):
+    def __init__(self, track_name, track_uri, artist_name):
         self.track_name = track_name
-        self.track_id = track_id
+        self.track_uri = track_uri
         self.artist_name = artist_name
 
     def to_string(self):
