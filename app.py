@@ -10,13 +10,20 @@ import time
 import secrets
 import string
 
-from classes import Track
+from classes import *
 
 app = Flask(__name__)
 
 random_str = ''.join(secrets.choice(string.ascii_uppercase + string.ascii_lowercase) for i in range(7))
 app.secret_key = random_str
 app.config['SESSION_COOKIE_NAME'] = 'Spotify Cookie'
+
+@app.route('/deredirect')
+def deredirect():
+    # been having infinte-loop problems sometimes when authenticating, and according to https://stackoverflow.com/questions/61198574/spotify-api-authorization-redirects-too-many-times,
+    # the solution is to simply re-redirect (or deredirect) the call to another module, hence this route
+
+    return redirect(url_for('create_playlist', _external=True))
 
 @app.route('/')
 def login():
@@ -31,7 +38,7 @@ def redirect_page():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session['token_info'] = token_info
-    return redirect(url_for('create_playlist', _external=True))
+    return redirect(url_for('deredirect', _external=True))
 
 @app.route('/createPlaylist')
 def create_playlist():
@@ -56,10 +63,13 @@ def create_playlist():
     # create a string concatenating all songs from the seleceted tracks by their URI's and separeted by a comma ','
     # with the playlist's ID and the URI's string, add all the songs to the playlist [POST]
     #
+    user = get_current_user()
+    playlist_name = user.display_name + '\'s AutoPlaylist'
+    playlists = get_current_user_playlists()
 
     tracks = get_tracks()
 
-    return 'creating your playlist...<br><br>' + tracks[0].track_name
+    return 'creating your playlist...<br><br>' + playlists[0].to_string()
 
 def get_tracks():
     top_tracks = get_top_tracks(limit = 20)
@@ -82,7 +92,7 @@ def get_tracks():
     while not correct_size:
         for saved_track in saved_tracks:
             for index, top_track in enumerate(top_tracks):
-                if saved_track.track_name == top_track.track_name:
+                if saved_track.name == top_track.name:
                     top_tracks.pop(index)
                     
                     # Here we break since we do not expect to have the same song twice in a list, however if that were to happen, we would need to alter this code to
@@ -138,6 +148,37 @@ def get_saved_tracks():
         saved_tracks.append(new_track)
 
     return saved_tracks
+
+def get_current_user():
+    session['token_info'], authorized = get_token()
+    session.modified = True
+    if not authorized:
+        print('user not logged in')
+        return redirect(url_for('login', _external=False))
+    
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+    
+    results = sp.current_user()
+    user = User(results['id'], results['display_name'])
+
+    return user
+ 
+def get_current_user_playlists(limit=20, offset=0):
+    session['token_info'], authorized = get_token()
+    session.modified = True
+    if not authorized:
+        print('user not logged in')
+        return redirect(url_for('login', _external=False))
+    
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+
+    results = sp.current_user_playlists(limit=limit, offset=offset)
+    playlists = []
+    for item in results['items']:
+        new_playlist = Playlist(item['id'], item['name'], item['owner']['id'], item['owner']['display_name'])
+        playlists.append(new_playlist)
+
+    return playlists
 
 
 def get_token():
