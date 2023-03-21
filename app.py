@@ -67,6 +67,9 @@ def create_playlist():
     playlist_name = user.display_name + '\'s AutoPlaylist'
     playlists = get_current_user_playlists()
 
+    # 
+    # query string for n tracks should follow this format: '[track_one_uri],[track_two_uri],...,[track_n_uri]'
+    #
     tracks = get_tracks()
     tracks_uri_str = ''
     for index, track in enumerate(tracks):
