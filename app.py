@@ -68,8 +68,13 @@ def create_playlist():
     playlists = get_current_user_playlists()
 
     tracks = get_tracks()
+    tracks_uri_str = ''
+    for index, track in enumerate(tracks):
+        tracks_uri_str += track.uri
+        if index < len(tracks) - 1:
+            tracks_uri_str += ','
 
-    return 'creating your playlist...<br><br>' + playlists[0].to_string()
+    return 'creating your playlist...<br><br>' + tracks_uri_str
 
 def get_tracks():
     top_tracks = get_top_tracks(limit = 20)
