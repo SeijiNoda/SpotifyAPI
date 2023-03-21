@@ -39,13 +39,13 @@ class User:
 
 class Playlist:
     def __init__(self, playlist_id, name, owner_uid, owner_display_name):
-        self._playlist_id = playlist_id
+        self._id = playlist_id
         self._name = name
         self._owner = User(owner_uid, owner_display_name)
 
     @property
-    def playlist_id(self):
-        return self._playlist_id
+    def id(self):
+        return self._id
 
     @property
     def name(self):

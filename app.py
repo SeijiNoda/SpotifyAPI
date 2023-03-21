@@ -66,6 +66,30 @@ def create_playlist():
     user = get_current_user()
     playlist_name = user.display_name + '\'s AutoPlaylist'
     playlists = get_current_user_playlists()
+    
+    #
+    # verify if "[current user's name]'s AutoPlaylist already exists or not, and if it does, get it's ID code" 
+    #
+    playlist_exists = False
+    playlist_id = -1
+    end = False
+    while True:
+        for index, playlist in enumerate(playlists):
+            if playlist.name == playlist_name:
+                playlist_exists = True
+                playlist_id = playlist.id
+                break
+        
+        if playlist_exists or end:
+            break
+        
+        playlists = get_current_user_playlists(offset=(index+1)*20)
+        
+        if len(playlists) < 20:
+            end = True   
+        
+    return 'playlist existe: ' + str(playlist_exists)
+    
 
     # 
     # query string for n tracks should follow this format: '[track_one_uri],[track_two_uri],...,[track_n_uri]'
