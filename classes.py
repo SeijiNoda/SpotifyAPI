@@ -22,7 +22,7 @@ class Track:
 
 class User:
     def __init__(self, uid, display_name):
-        self._id = uid
+        self._uid = uid
         self._display_name = display_name
     
     @property

@@ -65,6 +65,7 @@ def create_playlist():
     #
     user = get_current_user()
     playlist_name = user.display_name + '\'s AutoPlaylist'
+    playlist_dscrptn = 'This playlist was procedurally genereated at ' + str(time.asctime())
     playlists = get_current_user_playlists()
     
     #
@@ -87,10 +88,7 @@ def create_playlist():
         
         if len(playlists) < 20:
             end = True   
-        
-    return 'playlist existe: ' + str(playlist_exists)
     
-
     # 
     # query string for n tracks should follow this format: '[track_one_uri],[track_two_uri],...,[track_n_uri]'
     #
@@ -100,6 +98,19 @@ def create_playlist():
         tracks_uri_str += track.uri
         if index < len(tracks) - 1:
             tracks_uri_str += ','
+    
+    #
+    # using playlist_exists, creates/updates the playlist with the new songs
+    #
+    if playlist_exists:
+        # delete songs from playlist
+        # insert new songs
+        x = 1
+    else:
+        playlist_id = create_new_playlist(name=playlist_name, user=user.uid, description=playlist_dscrptn, public=True)
+        add_tracks_to_playlist(playlist_id=playlist_id, tracks=(track.uri for track in tracks))
+        return 'playlist created at https://open.spotify.com/playlist/' + str(playlist_id) 
+    
 
     return 'creating your playlist...<br><br>' + tracks_uri_str
 
@@ -212,6 +223,35 @@ def get_current_user_playlists(limit=20, offset=0):
 
     return playlists
 
+def create_new_playlist(name, user, description, public=True, collab=False):
+    session['token_info'], authorized = get_token()
+    session.modified = True
+    if not authorized:
+        print('user not logged in')
+        return redirect(url_for('login', _external=False))
+    
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+
+    # creates a new playlist given the user's ID, name, if he wants that playlist ot public, and it's description
+    results = sp.user_playlist_create(user=user, name=name, public=public, collaborative=collab, description=description)
+    playlist_id = results['id']
+    
+    return playlist_id
+
+def add_tracks_to_playlist(playlist_id, tracks, position=0):
+    session['token_info'], authorized = get_token()
+    session.modified = True
+    if not authorized:
+        print('user not logged in')
+        return redirect(url_for('login', _external=False))
+    
+    sp = spotipy.Spotify(auth=session.get('token_info').get('access_token'))
+    
+    # adds the tracks to the given playlist ID
+    results = sp.playlist_add_items(playlist_id=playlist_id, items=tracks, position=position)
+    snapshot_id = results['snapshot_id']
+    return snapshot_id
+
 
 def get_token():
     token_valid = False
@@ -239,7 +279,7 @@ def create_spotify_oauth():
         client_id=client_id,
         client_secret=client_secret,
         redirect_uri=url_for('redirect_page', _external=True),
-        scope='user-library-read user-top-read'
+        scope='user-library-read user-top-read playlist-modify-private playlist-modify-public'
     )
 
 # aux funcs
