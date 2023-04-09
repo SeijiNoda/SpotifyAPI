@@ -65,7 +65,7 @@ def create_playlist():
     #
     user = get_current_user()
     playlist_name = user.display_name + '\'s AutoPlaylist'
-    playlist_dscrptn = 'This playlist was procedurally genereated at ' + str(time.asctime())
+    playlist_dscrptn = f'This playlist was procedurally genereated at {str(time.asctime())}'
     playlists = get_current_user_playlists()
     
     #
@@ -109,7 +109,7 @@ def create_playlist():
     else:
         playlist_id = create_new_playlist(name=playlist_name, user=user.uid, description=playlist_dscrptn, public=True)
         add_tracks_to_playlist(playlist_id=playlist_id, tracks=(track.uri for track in tracks))
-        return 'playlist created at https://open.spotify.com/playlist/' + str(playlist_id) 
+        return f'playlist created at https://open.spotify.com/playlist/{str(playlist_id)}' 
     
 
     return 'creating your playlist...<br><br>' + tracks_uri_str
