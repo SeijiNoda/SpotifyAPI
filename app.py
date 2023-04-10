@@ -64,7 +64,7 @@ def create_playlist():
     # with the playlist's ID and the URI's string, add all the songs to the playlist [POST]
     #
     user = get_current_user()
-    playlist_name = user.display_name + '\'s AutoPlaylist'
+    playlist_name = f'{user.display_name}\'s AutoPlaylist'
     playlist_dscrptn = f'This playlist was procedurally genereated at {str(time.asctime())}'
     playlists = get_current_user_playlists()
     
@@ -105,14 +105,16 @@ def create_playlist():
     if playlist_exists:
         # delete songs from playlist
         # insert new songs
-        x = 1
+        sp.playlist_replace_items(playlist_id=playlist_id, items=(track.uri for track in tracks))
+        sp.playlist_change_details(playlist_id=playlist_id, description=playlist_dscrptn)
+        return f'playlist already exists!'
     else:
         playlist_id = create_new_playlist(name=playlist_name, user=user.uid, description=playlist_dscrptn, public=True)
         add_tracks_to_playlist(playlist_id=playlist_id, tracks=(track.uri for track in tracks))
         return f'playlist created at https://open.spotify.com/playlist/{str(playlist_id)}' 
     
 
-    return 'creating your playlist...<br><br>' + tracks_uri_str
+    return f'creating your playlist...<br><br>{tracks_uri_str}'
 
 def get_tracks():
     top_tracks = get_top_tracks(limit = 20)
@@ -282,8 +284,23 @@ def create_spotify_oauth():
         scope='user-library-read user-top-read playlist-modify-private playlist-modify-public'
     )
 
+def shutdown_server():
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func is None:
+        raise RuntimeError('Not running with the Werkzeug Server')
+    func()
+
+@app.get('/shutdown')
+def shutdown():
+    shutdown_server()
+    return 'Server shutting down...'
 # aux funcs
 
 def print_tracks(track_list):
     for i in range(len(track_list)):
         print(str(i) + '. ' + str(track_list[i].to_string()))
+
+server_port = os.getenv('PORT')
+
+if __name__ == '__main__':
+    app.run(host='localhost', port=server_port, debug=False)
